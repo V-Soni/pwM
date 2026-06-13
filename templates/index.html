@@ -53,6 +53,18 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background-color: #ef4444;
         }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.4s ease-out forwards;
+        }
+        .insight-card { animation: fadeInUp 0.4s ease-out forwards; }
+        .insight-card:nth-child(2) { animation-delay: 0.1s; }
+        .insight-card:nth-child(3) { animation-delay: 0.2s; }
+        .insight-card:nth-child(4) { animation-delay: 0.3s; }
+        .insight-card:nth-child(5) { animation-delay: 0.4s; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-maa-50 via-orange-50 to-red-50 min-h-screen text-maa-900 flex flex-col">
@@ -121,6 +133,20 @@
 
         <!-- Phase 2: Chat Interface -->
         <section id="chat-section" class="w-full max-w-3xl bg-white/90 backdrop-blur-md border border-maa-100 shadow-xl shadow-maa-100/50 rounded-3xl p-4 md:p-6 flex flex-col h-[600px] hidden opacity-0 transition-opacity duration-1000">
+            <!-- Chat Header with Analyze Button -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-maa-100">
+                <div class="flex items-center space-x-2">
+                    <span class="text-lg">💬</span>
+                    <span class="font-semibold text-maa-800 text-sm">Chat with Maa</span>
+                </div>
+                <button id="analyze-session-btn" onclick="analyzeSession()" 
+                    class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white rounded-full transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                    <span>📊</span>
+                    <span>Maa's Diary</span>
+                </button>
+            </div>
+
             <!-- Chat History Area -->
             <div id="chat-history" class="flex-grow overflow-y-auto mb-4 pr-2 custom-scrollbar space-y-4">
                 <!-- Initial message will be injected here -->
@@ -145,6 +171,59 @@
 
     </main>
 
+    <!-- Insights Modal Overlay -->
+    <div id="insights-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 md:p-8 relative">
+            <!-- Close Button -->
+            <button onclick="closeInsightsModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition">
+                ✕
+            </button>
+
+            <h2 class="font-serif-custom text-2xl font-bold text-maa-950 mb-1">📔 Maa's Diary</h2>
+            <p class="text-xs text-maa-500 mb-6">What Maa noticed about you today (powered by CBT analysis)</p>
+
+            <!-- Loading State -->
+            <div id="insights-loading" class="flex flex-col items-center justify-center py-12">
+                <svg class="animate-spin h-10 w-10 text-purple-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-sm text-maa-500">Maa is reading her diary...</p>
+            </div>
+
+            <!-- Results Container -->
+            <div id="insights-results" class="hidden space-y-5">
+                <!-- Wellness Score -->
+                <div class="insight-card opacity-0 text-center p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-100">
+                    <p class="text-xs font-bold text-purple-500 uppercase tracking-wider mb-2">Wellness Score</p>
+                    <div class="flex items-center justify-center space-x-2">
+                        <span id="insight-score" class="text-5xl font-bold text-purple-600">-</span>
+                        <span class="text-lg text-purple-400">/10</span>
+                    </div>
+                    <p id="insight-pattern" class="text-xs text-purple-600 mt-2 italic"></p>
+                </div>
+
+                <!-- Hidden Triggers -->
+                <div class="insight-card opacity-0 p-5 rounded-2xl bg-amber-50 border border-amber-100">
+                    <p class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-3">🔍 Hidden Stress Triggers</p>
+                    <div id="insight-triggers" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Cognitive Distortions -->
+                <div class="insight-card opacity-0 p-5 rounded-2xl bg-rose-50 border border-rose-100">
+                    <p class="text-xs font-bold text-rose-600 uppercase tracking-wider mb-3">🧠 Cognitive Distortions Detected</p>
+                    <ul id="insight-distortions" class="space-y-2 text-sm text-rose-800"></ul>
+                </div>
+
+                <!-- Action Plan -->
+                <div class="insight-card opacity-0 p-5 rounded-2xl bg-emerald-50 border border-emerald-100">
+                    <p class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-3">🎯 Your Personalized Action Plan</p>
+                    <ol id="insight-actions" class="space-y-2 text-sm text-emerald-800 list-decimal list-inside"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="w-full text-center py-6 text-xs text-maa-400 mt-auto">
         <p>&copy; 2026 Maa. PromptWars Mumbai.</p>
@@ -154,6 +233,7 @@
         let userAnswers = [];
         let currentContext = "";
         let chatHistoryLog = [];
+        let userMessageCount = 0;
 
         // Handle MCQ Selection
         function selectAnswer(questionNumber, answer) {
@@ -252,7 +332,13 @@
 
             chatInput.value = '';
             chatHistoryLog.push({ role: 'user', content: message });
+            userMessageCount++;
             appendMessage('user', message);
+
+            // Enable 'Maa's Diary' button after 2+ user messages
+            if (userMessageCount >= 2) {
+                document.getElementById('analyze-session-btn').disabled = false;
+            }
 
             chatInput.disabled = true;
             sendBtn.disabled = true;
@@ -297,6 +383,79 @@
                 sendBtn.disabled = false;
                 chatInput.focus();
             }
+        }
+
+        // Insights Engine
+        async function analyzeSession() {
+            if (chatHistoryLog.length < 3) {
+                alert('Beta, talk to Maa a little more first!');
+                return;
+            }
+
+            const modal = document.getElementById('insights-modal');
+            const loading = document.getElementById('insights-loading');
+            const results = document.getElementById('insights-results');
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/insights', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ history: chatHistoryLog })
+                });
+
+                if (!response.ok) throw new Error('Insights request failed');
+                const data = await response.json();
+
+                // Populate Wellness Score
+                document.getElementById('insight-score').textContent = data.wellness_score;
+                document.getElementById('insight-pattern').textContent = data.emotional_pattern;
+
+                // Populate Hidden Triggers as tags
+                const triggersContainer = document.getElementById('insight-triggers');
+                triggersContainer.innerHTML = '';
+                data.hidden_triggers.forEach(trigger => {
+                    const tag = document.createElement('span');
+                    tag.className = 'px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full border border-amber-200';
+                    tag.textContent = trigger;
+                    triggersContainer.appendChild(tag);
+                });
+
+                // Populate Cognitive Distortions
+                const distortionsList = document.getElementById('insight-distortions');
+                distortionsList.innerHTML = '';
+                data.cognitive_distortions.forEach(d => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start space-x-2';
+                    li.innerHTML = `<span class="text-rose-400 mt-0.5">⚠️</span><span>${d}</span>`;
+                    distortionsList.appendChild(li);
+                });
+
+                // Populate Action Plan
+                const actionsList = document.getElementById('insight-actions');
+                actionsList.innerHTML = '';
+                data.action_plan.forEach(a => {
+                    const li = document.createElement('li');
+                    li.textContent = a;
+                    actionsList.appendChild(li);
+                });
+
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                loading.classList.add('hidden');
+                alert('Maa could not read her diary right now. Please try again.');
+                modal.classList.add('hidden');
+            }
+        }
+
+        function closeInsightsModal() {
+            document.getElementById('insights-modal').classList.add('hidden');
         }
     </script>
 </body>

@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 
-from ai_engine import analyze_mcq_results, chat_with_maa
+from ai_engine import analyze_mcq_results, chat_with_maa, generate_insights
 
 app = FastAPI(title="Maa - Mental Wellness Companion")
 
@@ -38,6 +38,16 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
+class InsightsRequest(BaseModel):
+    history: List[Dict[str, str]]
+
+class InsightsResponse(BaseModel):
+    hidden_triggers: List[str]
+    cognitive_distortions: List[str]
+    emotional_pattern: str
+    wellness_score: int
+    action_plan: List[str]
+
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request) -> HTMLResponse:
@@ -57,3 +67,10 @@ async def chat(request_data: ChatRequest) -> ChatResponse:
     """Chats with the user as Maa, maintaining emotional context."""
     reply = await chat_with_maa(request_data.message, request_data.context, request_data.history)
     return ChatResponse(reply=reply)
+
+
+@app.post("/api/insights", response_model=InsightsResponse)
+async def insights(request_data: InsightsRequest) -> InsightsResponse:
+    """Analyzes the chat history to uncover hidden stress triggers and emotional patterns."""
+    result = await generate_insights(request_data.history)
+    return InsightsResponse(**result)

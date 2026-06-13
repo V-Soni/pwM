@@ -63,3 +63,56 @@ async def chat_with_maa(message: str, context: str, history: list) -> str:
     )
     return completion.choices[0].message.content.strip()
 
+
+async def generate_insights(history: list) -> dict:
+    """
+    Analyzes the full chat history (acting as open-ended journaling) to uncover
+    hidden stress triggers, cognitive distortions, and provide a tailored action plan.
+    Uses Cognitive Behavioral Therapy (CBT) principles backed by research.
+    """
+    # Build a readable transcript from the history
+    transcript_lines = []
+    for msg in history:
+        speaker = "Student" if msg.get("role") == "user" else "Maa"
+        transcript_lines.append(f"{speaker}: {msg.get('content', '')}")
+    transcript = "\n".join(transcript_lines)
+
+    system_prompt = (
+        "You are an expert psychologist specializing in Cognitive Behavioral Therapy (CBT) for students preparing for competitive exams. "
+        "You will be given a conversation transcript between a student and their companion. "
+        "Analyze the transcript deeply and return a JSON object with EXACTLY these keys: "
+        '"hidden_triggers": an array of 2-4 specific stress triggers you identified from the conversation (e.g., "Fear of disappointing parents", "Sleep deprivation before Physics exam"). If the student seems genuinely fine, return ["No significant stress triggers detected"]. '
+        '"cognitive_distortions": an array of 1-3 cognitive distortions detected (e.g., "Catastrophizing - believing one bad exam means total failure", "All-or-nothing thinking"). If none detected, return ["None detected - student appears mentally balanced"]. '
+        '"emotional_pattern": a single string summarizing the overall emotional arc of the conversation (e.g., "Started anxious but gradually became calmer after expressing concerns"). '
+        '"wellness_score": an integer from 1-10 representing overall mental wellness (10 = excellent). '
+        '"action_plan": an array of 2-3 specific, actionable CBT/mindfulness strategies tailored to what was discussed (e.g., "Practice 4-7-8 breathing before studying Physics", "Write down 3 things that went well today before sleeping"). '
+        "Return ONLY valid JSON. No markdown, no explanation, no extra text."
+    )
+
+    completion = await client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Analyze this conversation transcript:\n\n{transcript}"}
+        ]
+    )
+
+    import json
+    raw = completion.choices[0].message.content.strip()
+    # Strip markdown code fences if present
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw[3:]
+        if raw.endswith("```"):
+            raw = raw[:-3]
+        raw = raw.strip()
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {
+            "hidden_triggers": ["Analysis could not be completed"],
+            "cognitive_distortions": ["Please try again"],
+            "emotional_pattern": "Unable to determine",
+            "wellness_score": 5,
+            "action_plan": ["Continue talking to Maa about your day"]
+        }
