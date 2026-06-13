@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 
 from ai_engine import analyze_mcq_results, chat_with_maa, generate_insights
@@ -24,15 +24,15 @@ templates = Jinja2Templates(directory="templates")
 
 # Request/Response schemas
 class MCQRequest(BaseModel):
-    answers: List[str]
+    answers: List[str] = Field(..., max_items=5)
 
 class MCQResponse(BaseModel):
     mood: str
     maa_initial_message: str
 
 class ChatRequest(BaseModel):
-    message: str
-    context: str
+    message: str = Field(..., max_length=1000)
+    context: str = Field(..., max_length=50)
     history: List[Dict[str, str]] = []
 
 class ChatResponse(BaseModel):

@@ -53,7 +53,10 @@ async def chat_with_maa(message: str, context: str, history: list) -> str:
     )
 
     messages = [{"role": "system", "content": system_prompt}]
-    for msg in history:
+    
+    # Efficiency: Limit history to last 10 messages to prevent token bloat
+    recent_history = history[-10:] if len(history) > 10 else history
+    for msg in recent_history:
         messages.append(msg)
     messages.append({"role": "user", "content": message})
 
